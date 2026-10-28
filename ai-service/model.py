@@ -3,35 +3,12 @@ import time
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
-from torchvision.models import resnet50, ResNet50_Weights
+from arch import TruthLensClassifier, INPUT_SIZE, MEAN, STD
 from PIL import Image
 import numpy as np
 
 # Select CUDA if available, CPU otherwise
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-class TruthLensClassifier(nn.Module):
-    """
-    TruthLens PyTorch Model Architecture.
-    Configured for binary classification (0: Authentic, 1: AI-Generated / Manipulated)
-    using a deep residual feature backbone with dropout and linear classification head.
-    Can be dynamically adapted if the Colab training notebook specifies another head.
-    """
-    def __init__(self, num_classes=2, dropout_rate=0.3):
-        super(TruthLensClassifier, self).__init__()
-        # Backbone: ResNet50
-        self.backbone = resnet50(weights=None)
-        in_features = self.backbone.fc.in_features
-        self.backbone.fc = nn.Sequential(
-            nn.Dropout(p=dropout_rate),
-            nn.Linear(in_features, 256),
-            nn.ReLU(),
-            nn.Dropout(p=dropout_rate / 2),
-            nn.Linear(256, num_classes)
-        )
-
-    def forward(self, x):
-        return self.backbone(x)
 
 
 class ModelManager:
@@ -54,11 +31,11 @@ class ModelManager:
 
         # Standard ImageNet / Deepfake Forensics Normalization
         self.transform = transforms.Compose([
-            transforms.Resize((224, 224)),
+            transforms.Resize(INPUT_SIZE),
             transforms.ToTensor(),
             transforms.Normalize(
-                mean=[0.485, 0.456, 0.406],
-                std=[0.229, 0.224, 0.225]
+                mean=MEAN,
+                std=STD
             )
         ])
 
@@ -77,6 +54,8 @@ class ModelManager:
 
                 # Support state_dict, full model, or nested checkpoint dictionaries
                 if isinstance(checkpoint, dict):
+                    meta = checkpoint.get("meta") or {}
+                    self.model_metadata["val_acc"] = meta.get("val_acc")
                     if "state_dict" in checkpoint:
                         state_dict = checkpoint["state_dict"]
                     elif "model_state_dict" in checkpoint:
@@ -90,7 +69,7 @@ class ModelManager:
                         new_key = k.replace("module.", "")
                         cleaned_dict[new_key] = v
 
-                    self.model.load_state_dict(cleaned_dict, strict=False)
+                    self.model.load_state_dict(cleaned_dict, strict=True)
                 elif isinstance(checkpoint, nn.Module):
                     self.model = checkpoint.to(self.device)
                     self.model.eval()
