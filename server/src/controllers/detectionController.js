@@ -1,6 +1,16 @@
+import mongoose from 'mongoose';
 import { Detection } from '../models/Detection.js';
 import { AIService } from '../services/aiService.js';
 import { validateFileSignature, cleanupFile } from '../middleware/uploadMiddleware.js';
+
+// Save the result when MongoDB is connected; otherwise keep detection working
+// (the record just isn't stored), so the demo never depends on the database.
+const persist = async (doc) => {
+  if (mongoose.connection.readyState !== 1) {
+    return { ...doc, _id: null, createdAt: new Date() };
+  }
+  return Detection.create(doc);
+};
 
 export const detectImage = async (req, res, next) => {
   const file = req.file;
@@ -33,7 +43,7 @@ export const detectImage = async (req, res, next) => {
     }
 
     // 3. Save detection record to MongoDB
-    const detectionRecord = await Detection.create({
+    const detectionRecord = await persist({
       userId: req.user ? req.user._id : null,
       mediaType: 'image',
       originalFilename: file.originalname,
@@ -103,7 +113,7 @@ export const detectVideo = async (req, res, next) => {
     }
 
     // 3. Save detection record to MongoDB
-    const detectionRecord = await Detection.create({
+    const detectionRecord = await persist({
       userId: req.user ? req.user._id : null,
       mediaType: 'video',
       originalFilename: file.originalname,
