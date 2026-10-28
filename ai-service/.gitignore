@@ -1,15 +1,16 @@
 # Python virtual environments
 venv/
 .venv/
-ai-service/venv/
-ai-service/.venv/
 
 # Python cache
 __pycache__/
-*.pyc
+*.py[cod]
 
 # Environment variables
 .env
+
+# Trained weights are ~100 MB: too big for GitHub. Share them via Drive/Colab instead.
+models/*.pth
 
 # IDE files
 .vscode/
