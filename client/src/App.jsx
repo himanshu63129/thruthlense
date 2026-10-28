@@ -240,11 +240,7 @@ export default function App() {
 
         <aside className="side">
           {result ? (
-            <section className="readout">
-              <h2>Analysis Completed</h2>
-              <p className="verdict-pill">Prediction: {result.prediction}</p>
-              <p>Score: {result.score}</p>
-            </section>
+            <Readout result={result} previewUrl={previewUrl} accuracy={status.accuracy} />
           ) : (
             <section className="readout empty">
               <h2>Is this photo real?</h2>
