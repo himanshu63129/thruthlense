@@ -251,7 +251,26 @@ export default function App() {
             </section>
           )}
 
-          </aside>
+          {history.length > 0 && (
+            <section className="history">
+              <h3>This session</h3>
+              <ul>
+                {history.map((h) => {
+                  const v = VERDICTS[h.prediction] || VERDICTS.inconclusive
+                  return (
+                    <li key={h.id}>
+                      <img src={h.url} alt="" />
+                      <span className="h-name">{h.name}</span>
+                      <span className={`h-score tone-${v.tone}`}>
+                        {v.title} · {confidenceText(h.prediction, h.score)}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
+          )}
+        </aside>
       </main>
     </div>
   )
